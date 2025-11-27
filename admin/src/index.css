@@ -1,0 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+@import "tailwindcss";
+/* 
+*{
+    font-family: Outfit;
+} */
+
+select option {
+  color: black !important;
+  background-color: white !important;
+}
