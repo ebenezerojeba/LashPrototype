@@ -43,8 +43,8 @@ app.use(compression())
 app.use(
   cors({
     origin: [
-      "https://lashedbyope.vercel.app",
-      "https://lashedbyopeadmin.vercel.app",
+      "https://beautish.vercel.app",
+      "https://beautishadmin.vercel.app",
       'http://localhost:5174' ,
       'http://localhost:5173'
     ],
