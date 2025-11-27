@@ -180,7 +180,7 @@ const Login = () => {
   
 
   return (
-    <div className="min-h-screen bg-[#9e2a2c] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#6B4E71] flex items-center justify-center p-4">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-primary/30 blur-3xl animate-pulse"></div>
