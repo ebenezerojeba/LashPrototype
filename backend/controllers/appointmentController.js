@@ -310,45 +310,6 @@ const generateUniqueAvailableSlots = async (start, end, totalDuration, providers
 
 
 
-// Helper function to process individual date
-const processDate = async (date, totalDuration, providers, currentTime) => {
-  const dateStr = date.toISOString().split('T')[0];
-  const dayOfWeek = date.getDay();
-  const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek];
-
-  // Skip processing if no providers work on this day
-  const hasWorkingProvider = providers.some(provider => {
-    const providerDay = provider.workingHours.find(wh => wh.dayOfWeek === dayOfWeek && wh.isWorking);
-    return !!providerDay;
-  });
-
-  if (!hasWorkingProvider) {
-    return null;
-  }
-
-  console.log(`📅 Processing date: ${dateStr} (${dayName})`);
-
-  const bestSlotsForDate = await findBestAvailableSlotsForDate(
-    date, 
-    totalDuration, 
-    providers, 
-    currentTime
-  );
-
-  if (bestSlotsForDate.length > 0) {
-    console.log(`✅ Added ${bestSlotsForDate.length} slots for ${dateStr}`);
-    return {
-      date: dateStr,
-      dayOfWeek: dayName,
-      slots: bestSlotsForDate,
-      totalDuration,
-      isLongDuration: totalDuration > 480
-    };
-  } else {
-    console.log(`❌ No valid slots for ${dateStr}`);
-    return null;
-  }
-};
 
 //Find best slots with massive performance improvements
 const findBestAvailableSlotsForDate = async (date, totalDuration, providers, currentTime) => {
@@ -422,7 +383,62 @@ const findBestAvailableSlotsForDate = async (date, totalDuration, providers, cur
   return availableSlots;
 };
 
-// OPTIMIZED: Generate time slots based on provider working hours
+// Replace the processDate function with this updated version:
+
+const processDate = async (date, totalDuration, providers, currentTime) => {
+  const dateStr = date.toISOString().split('T')[0];
+  const dayOfWeek = date.getDay();
+  const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek];
+
+  // Get today's date at midnight for comparison
+  const today = new Date(currentTime);
+  today.setHours(0, 0, 0, 0);
+  
+  const checkDate = new Date(date);
+  checkDate.setHours(0, 0, 0, 0);
+
+  // Skip past dates completely
+  if (checkDate < today) {
+    console.log(`⏩ Skipping past date: ${dateStr}`);
+    return null;
+  }
+
+  // Skip processing if no providers work on this day
+  const hasWorkingProvider = providers.some(provider => {
+    const providerDay = provider.workingHours.find(wh => wh.dayOfWeek === dayOfWeek && wh.isWorking);
+    return !!providerDay;
+  });
+
+  if (!hasWorkingProvider) {
+    return null;
+  }
+
+  console.log(`📅 Processing date: ${dateStr} (${dayName})`);
+
+  const bestSlotsForDate = await findBestAvailableSlotsForDate(
+    date, 
+    totalDuration, 
+    providers, 
+    currentTime
+  );
+
+  if (bestSlotsForDate.length > 0) {
+    console.log(`✅ Added ${bestSlotsForDate.length} slots for ${dateStr}`);
+    return {
+      date: dateStr,
+      dayOfWeek: dayName,
+      slots: bestSlotsForDate,
+      totalDuration,
+      isLongDuration: totalDuration > 480
+    };
+  } else {
+    console.log(`❌ No valid slots for ${dateStr}`);
+    return null;
+  }
+};
+
+// Also update generateOptimizedTimeSlots to better handle today's date:
+
 const generateOptimizedTimeSlots = (date, duration, providers, isToday, currentTime) => {
   const dayOfWeek = date.getDay();
   const slots = [];
@@ -442,10 +458,28 @@ const generateOptimizedTimeSlots = (date, duration, providers, isToday, currentT
     }
   });
 
-  // Adjust for today's current time
+  // Adjust for today's current time with buffer
   if (isToday) {
     const currentHour = currentTime.getHours();
-    earliestStart = Math.max(earliestStart, currentHour + 1);
+    const currentMinute = currentTime.getMinutes();
+    
+    // Add 2 hour buffer for today's bookings
+    let minStartHour = currentHour + 2;
+    
+    // If we're past 30 minutes, round up to next hour
+    if (currentMinute > 30) {
+      minStartHour += 1;
+    }
+    
+    earliestStart = Math.max(earliestStart, minStartHour);
+    
+    console.log(`🕐 Today's slots: Current time ${currentHour}:${currentMinute}, earliest start: ${earliestStart}:00`);
+  }
+
+  // If no valid hours available, return empty array
+  if (earliestStart >= latestEnd) {
+    console.log(`⏩ No valid time slots for this date`);
+    return [];
   }
 
   // Generate slots within common working hours
